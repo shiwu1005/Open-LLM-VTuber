@@ -1,78 +1,86 @@
-# ignore the user configuration file
+# =============================================================================
+#  .gitignore for a personal Open-LLM-VTuber fork
+#
+#  Layered on top of the upstream .gitignore. The goal is that `git status`
+#  never shows your private config, caches, virtualenv, or large/branded assets.
+#
+#  Install by replacing the repo-root .gitignore with this file, or append the
+#  "extra" section below to the existing one.
+# =============================================================================
+
+# ---------- private configuration ----------
+# Your personal conf.yaml. Ship conf.example.yaml instead.
 conf.yaml
+conf.yaml.backup
 
-# ignore non-default background images
-/backgrounds/*
-!/backgrounds/README.md
+# MCP server registry - contains absolute local paths, machine specific.
+# Ship mcp_servers.example.json instead.
+mcp_servers.json
+!mcp_servers.example.json
 
-# ignore non-default live2d models
-/live2d-models/*
-!/live2d-models/mao_pro
-!/live2d-models/shizuku
+# ---------- structured memory (IMPORTANT: contains real conversation data) ----
+# long_term.md / short_term.md / archive/ hold summaries of your actual life:
+# your schedule, work, family, plans. Publishing these leaks them.
+# NOTE: upstream's .gitignore does NOT cover this directory - it is new here.
+memory/*
+!memory/README.md
 
-# ignore non-default character configs
-/characters/*
-!/characters/README.md
-# but all of the defaults are already tracked, so no need to un-ignore them
+# Character configs are personal (they are your personas).
+characters/*
+!characters/README.md
 
-# ignore avatars
-avatars/*
-
-# macOS system files
-.DS_Store
-
-# Python files
-__pycache__/
-*.pyc
-lab.py
-.idea
-
-# Virtual environment
-.venv
-.conda
-conda
-
-# Sensitive data
+# ---------- secrets ----------
 .env
 api_keys.py
 src/open_llm_vtuber/llm/user_credentials.json
+*.key
+*.pem
 
-# Database files
+# ---------- Live2D models ----------
+# IMPORTANT: Live2D Inc. sample models are copyrighted.
+# The Free Material License Agreement, clause 4.1.1 "No Redistribution",
+# forbids redistributing the model files to third parties.
+# Do NOT commit live2d-models/ to a public repository.
+# Users download models themselves from the official source.
+live2d-models/*
+!live2d-models/README.md
+
+# ---------- downloaded TTS / ASR models ----------
+# Large binaries, and redistributing them is unnecessary - scripts/setup.ps1
+# fetches them from their official release pages.
+models/*
+!models/README.md
+
+# ---------- python ----------
+.venv/
+.conda/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.ruff_cache/
+
+# ---------- runtime state ----------
+cache/*
+logs/*
+server.log
+chat_history/
+knowledge_base/
+mem.json
 memory.db
 memory.db.bk
 
-# Logs
-server.log
-logs/*
+# ---------- OS / editor ----------
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
 
-# Cache and models
-cache/*
-src/open_llm_vtuber/tts/asset
-src/open_llm_vtuber/tts/config
-src/open_llm_vtuber/asr/models*
-!src/open_llm_vtuber/asr/models/silero_vad.onnx
-asset
-models/*
-!models/piper_voice
-models/piper_voice/*
-
-
-# Legacy and specific directories
-legacy/
-chat_history/
-knowledge_base/
-submodules/MeloTTS
+# ---------- upstream-original ignores (kept for compatibility) ----------
+/backgrounds/*
+!/backgrounds/README.md
+avatars/*
 openapi_assistants.json
 openapi_memgpt.json
-
-# memory log
-mem.json
-conf.yaml.backup
-
-*.exe
-
-tmp/
-private/
-mcp_servers.json
-
-.vscode/
+upgrade_codes/*.local

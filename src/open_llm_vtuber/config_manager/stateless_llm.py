@@ -64,6 +64,7 @@ class OpenAICompatibleConfig(StatelessLLMBaseConfig):
     organization_id: str | None = Field(None, alias="organization_id")
     project_id: str | None = Field(None, alias="project_id")
     temperature: float = Field(1.0, alias="temperature")
+    max_tokens: int | None = Field(None, alias="max_tokens")
 
     _OPENAI_COMPATIBLE_DESCRIPTIONS: ClassVar[dict[str, Description]] = {
         "base_url": Description(en="Base URL for the API endpoint", zh="API的URL端点"),
@@ -78,6 +79,13 @@ class OpenAICompatibleConfig(StatelessLLMBaseConfig):
         "temperature": Description(
             en="What sampling temperature to use, between 0 and 2.",
             zh="使用的采样温度，介于 0 和 2 之间。",
+        ),
+        "max_tokens": Description(
+            en="Upper bound on generated tokens. Required for reasoning models "
+            "served by LM Studio: their default budget can be fully consumed by "
+            "reasoning tokens, producing an empty reply (silent character).",
+            zh="生成 token 的上限。LM Studio 上的推理模型必须设置此项：默认预算可能"
+            "被思考内容全部占用，导致回复为空（角色不出声）。",
         ),
     }
 
@@ -241,6 +249,9 @@ class StatelessLLMConfigs(I18nMixin, BaseModel):
     )
     ollama_llm: OllamaConfig | None = Field(None, alias="ollama_llm")
     lmstudio_llm: LmStudioConfig | None = Field(None, alias="lmstudio_llm")
+    # Optional dedicated model for the structured memory system's internal
+    # extraction/consolidation calls (see MemorySystemConfig.memory_llm_provider).
+    memory_llm: OpenAICompatibleConfig | None = Field(None, alias="memory_llm")
     openai_llm: OpenAIConfig | None = Field(None, alias="openai_llm")
     gemini_llm: GeminiConfig | None = Field(None, alias="gemini_llm")
     zhipu_llm: ZhipuConfig | None = Field(None, alias="zhipu_llm")

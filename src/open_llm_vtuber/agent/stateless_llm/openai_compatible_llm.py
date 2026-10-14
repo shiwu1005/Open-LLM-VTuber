@@ -30,6 +30,7 @@ class AsyncLLM(StatelessLLMInterface):
         organization_id: str = "z",
         project_id: str = "z",
         temperature: float = 1.0,
+        max_tokens: int | None = None,
     ):
         """
         Initializes an instance of the `AsyncLLM` class.
@@ -41,10 +42,15 @@ class AsyncLLM(StatelessLLMInterface):
         - project_id (str, optional): The project ID for the OpenAI API. Defaults to "z".
         - llm_api_key (str, optional): The API key for the OpenAI API. Defaults to "z".
         - temperature (float, optional): What sampling temperature to use, between 0 and 2. Defaults to 1.0.
+        - max_tokens (int, optional): Upper bound on generated tokens. Needed for
+          reasoning models served by LM Studio, whose small default budget can be
+          consumed entirely by reasoning tokens, leaving no visible reply.
+          None means "do not send the parameter" (previous behaviour).
         """
         self.base_url = base_url
         self.model = model
         self.temperature = temperature
+        self.max_tokens = max_tokens
         self.client = AsyncOpenAI(
             base_url=base_url,
             organization=organization_id,
@@ -55,6 +61,7 @@ class AsyncLLM(StatelessLLMInterface):
 
         logger.info(
             f"Initialized AsyncLLM with the parameters: {self.base_url}, {self.model}"
+            f", max_tokens={self.max_tokens}"
         )
 
     async def chat_completion(
@@ -97,6 +104,12 @@ class AsyncLLM(StatelessLLMInterface):
 
             available_tools = tools if self.support_tools else NOT_GIVEN
 
+            # Only send max_tokens when explicitly configured, so default behaviour
+            # is unchanged for other providers.
+            extra_params = (
+                {"max_tokens": self.max_tokens} if self.max_tokens else {}
+            )
+
             stream: AsyncStream[
                 ChatCompletionChunk
             ] = await self.client.chat.completions.create(
@@ -105,6 +118,7 @@ class AsyncLLM(StatelessLLMInterface):
                 stream=True,
                 temperature=self.temperature,
                 tools=available_tools,
+                **extra_params,
             )
             logger.debug(
                 f"Tool Support: {self.support_tools}, Available tools: {available_tools}"

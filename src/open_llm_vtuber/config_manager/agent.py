@@ -58,6 +58,105 @@ class BasicMemoryAgentConfig(I18nMixin, BaseModel):
     }
 
 
+class MemorySystemConfig(I18nMixin, BaseModel):
+    """Configuration for the structured two-tier memory system."""
+
+    enabled: Optional[bool] = Field(True, alias="enabled")
+    dir: Optional[str] = Field("memory", alias="dir")
+    stm_fix_threshold: Optional[int] = Field(7, alias="stm_fix_threshold")
+    max_ltm_in_prompt: Optional[int] = Field(40, alias="max_ltm_in_prompt")
+    max_stm_in_prompt: Optional[int] = Field(7, alias="max_stm_in_prompt")
+    day_start_date: Optional[str] = Field("", alias="day_start_date")
+    scene_options: Optional[List[str]] = Field(None, alias="scene_options")
+
+    # --- model + budget for the internal extraction/consolidation calls ---
+    memory_llm_provider: Optional[str] = Field("", alias="memory_llm_provider")
+    memory_mode: Optional[str] = Field("extract", alias="memory_mode")
+    internal_max_tokens: Optional[int] = Field(2048, alias="internal_max_tokens")
+    consolidation_max_tokens: Optional[int] = Field(
+        4096, alias="consolidation_max_tokens"
+    )
+    internal_timeout: Optional[float] = Field(90.0, alias="internal_timeout")
+    consolidation_timeout: Optional[float] = Field(
+        300.0, alias="consolidation_timeout"
+    )
+
+    DESCRIPTIONS: ClassVar[Dict[str, Description]] = {
+        "enabled": Description(en="Enable the memory system", zh="是否启用记忆系统"),
+        "dir": Description(
+            en="Directory for memory files, relative to project root",
+            zh="记忆文件目录（相对项目根目录）",
+        ),
+        "memory_llm_provider": Description(
+            en="Key in llm_configs used for memory extraction/consolidation. "
+            "Empty = reuse the character's main LLM. Point it at a small "
+            "non-reasoning model: a reasoning model can take ~100s to "
+            "consolidate, a 3B non-reasoning model takes a few seconds.",
+            zh="用于记忆抽取/固化的模型（填 llm_configs 里的键名）。"
+            "留空=复用角色主模型。建议指向小的非推理模型："
+            "推理模型固化要 100 秒，3B 非推理模型只要几秒。",
+        ),
+        "memory_mode": Description(
+            en="'extract' = separate call reads the turn (reliable). "
+            "'inline' = model appends an invisible tag (free, less reliable).",
+            zh="'extract'=另起一次调用抽取（可靠）；'inline'=模型自己输出标签（免费但会漏）",
+        ),
+        "internal_max_tokens": Description(
+            en="Token budget for one extraction call",
+            zh="单次抽取的 token 预算",
+        ),
+        "consolidation_max_tokens": Description(
+            en="Token budget for a consolidation call",
+            zh="固化的 token 预算",
+        ),
+        "internal_timeout": Description(
+            en="Seconds to wait for an extraction call",
+            zh="抽取超时（秒）",
+        ),
+        "consolidation_timeout": Description(
+            en="Seconds to wait for a consolidation call",
+            zh="固化超时（秒）",
+        ),
+        "stm_fix_threshold": Description(
+            en="Number of short-term rows that triggers consolidation",
+            zh="短期记忆达到多少条时触发固化",
+        ),
+        "max_ltm_in_prompt": Description(
+            en="Maximum long-term rows injected into the prompt",
+            zh="注入提示词的长期记忆条数上限",
+        ),
+        "max_stm_in_prompt": Description(
+            en="Maximum short-term rows injected into the prompt",
+            zh="注入提示词的短期记忆条数上限",
+        ),
+        "day_start_date": Description(
+            en="Date that counts as day 1 (YYYY-MM-DD). Empty = first conversation day",
+            zh="第 1 天的日期（YYYY-MM-DD）。留空表示首次对话那天",
+        ),
+        "scene_options": Description(
+            en="Candidate scene labels the model picks from",
+            zh="场景候选词，模型从中选择",
+        ),
+    }
+
+
+class StructuredMemoryAgentConfig(BasicMemoryAgentConfig):
+    """Configuration for the structured memory agent.
+
+    Identical to BasicMemoryAgentConfig plus a `memory` section.
+    """
+
+    memory: Optional[MemorySystemConfig] = Field(None, alias="memory")
+
+    DESCRIPTIONS: ClassVar[Dict[str, Description]] = {
+        **BasicMemoryAgentConfig.DESCRIPTIONS,
+        "memory": Description(
+            en="Structured two-tier memory settings",
+            zh="结构化两层记忆系统设置",
+        ),
+    }
+
+
 class Mem0VectorStoreConfig(I18nMixin, BaseModel):
     """Configuration for Mem0 vector store."""
 
@@ -178,6 +277,9 @@ class AgentSettings(I18nMixin, BaseModel):
     basic_memory_agent: Optional[BasicMemoryAgentConfig] = Field(
         None, alias="basic_memory_agent"
     )
+    structured_memory_agent: Optional[StructuredMemoryAgentConfig] = Field(
+        None, alias="structured_memory_agent"
+    )
     mem0_agent: Optional[Mem0Config] = Field(None, alias="mem0_agent")
     hume_ai_agent: Optional[HumeAIConfig] = Field(None, alias="hume_ai_agent")
     letta_agent: Optional[LettaConfig] = Field(None, alias="letta_agent")
@@ -185,6 +287,10 @@ class AgentSettings(I18nMixin, BaseModel):
     DESCRIPTIONS: ClassVar[Dict[str, Description]] = {
         "basic_memory_agent": Description(
             en="Configuration for basic memory agent", zh="基础记忆代理配置"
+        ),
+        "structured_memory_agent": Description(
+            en="Configuration for structured two-tier memory agent",
+            zh="结构化两层记忆代理配置",
         ),
         "mem0_agent": Description(en="Configuration for Mem0 agent", zh="Mem0代理配置"),
         "hume_ai_agent": Description(
@@ -200,7 +306,11 @@ class AgentConfig(I18nMixin, BaseModel):
     """This class contains all of the configurations related to agent."""
 
     conversation_agent_choice: Literal[
-        "basic_memory_agent", "mem0_agent", "hume_ai_agent", "letta_agent"
+        "basic_memory_agent",
+        "structured_memory_agent",
+        "mem0_agent",
+        "hume_ai_agent",
+        "letta_agent",
     ] = Field(..., alias="conversation_agent_choice")
     agent_settings: AgentSettings = Field(..., alias="agent_settings")
     llm_configs: StatelessLLMConfigs = Field(..., alias="llm_configs")

@@ -1,0 +1,58 @@
+{
+    "_readme": [
+        "MCP server registry. Copy this file to mcp_servers.json and fix the paths.",
+        "",
+        "IMPORTANT: server_registry.py only checks PATH when the command is literally",
+        "'npx' / 'uvx' / 'node'. For any other command it does NOT verify the binary",
+        "exists, so a wrong path fails SILENTLY at connect time. Always use an",
+        "absolute path.",
+        "",
+        "To install the two built-in ones (executables land in %USERPROFILE%\\.local\\bin\\):",
+        "    uv tool install mcp-server-time",
+        "    uv tool install duckduckgo-mcp-server",
+        "",
+        "After registering a server here you must ALSO list its name in your character",
+        "YAML under agent_settings.<agent>.mcp_enabled_servers, otherwise it is not loaded."
+    ],
+
+    "mcp_servers": {
+        "time": {
+            "command": "C:\\Users\\YOUR_NAME\\.local\\bin\\mcp-server-time.exe",
+            "args": ["--local-timezone=Asia/Shanghai"]
+        },
+        "ddg-search": {
+            "command": "C:\\Users\\YOUR_NAME\\.local\\bin\\duckduckgo-mcp-server.exe",
+            "args": []
+        }
+    },
+
+    "_optional_examples": {
+        "_comment": "Copy any of these into the mcp_servers object above, then add the name to mcp_enabled_servers.",
+
+        "windows-mcp": {
+            "_warning": "Hands the AI your mouse and keyboard: click, type, screenshot, OCR, kill processes. 53 tools. Only enable if you want that.",
+            "command": "C:\\path\\to\\Open-LLM-VTuber\\.venv\\Scripts\\win32-mcp-server.exe",
+            "args": [],
+            "env": { "PYTHONIOENCODING": "utf-8" }
+        },
+
+        "filesystem": {
+            "_comment": "Read/write files under the listed directories only. Requires Node.js.",
+            "command": "npx",
+            "args": [
+                "-y",
+                "@modelcontextprotocol/server-filesystem",
+                "C:\\Users\\YOUR_NAME\\Documents"
+            ]
+        },
+
+        "http-bridge": {
+            "_comment": "Generic bridge that turns any HTTP API into MCP tools. Edit the JSON, no code needed. Ships in extras/.",
+            "command": "C:\\path\\to\\Open-LLM-VTuber\\.venv\\Scripts\\python.exe",
+            "args": [
+                "C:\\path\\to\\Open-LLM-VTuber\\extras\\mcp_http_bridge.py",
+                "C:\\path\\to\\Open-LLM-VTuber\\extras\\http_tools.json"
+            ]
+        }
+    }
+}

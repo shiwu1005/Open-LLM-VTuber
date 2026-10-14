@@ -85,6 +85,81 @@ class AgentFactory:
                 mcp_prompt_string=mcp_prompt_string,
             )
 
+        elif conversation_agent_choice == "structured_memory_agent":
+            # Same as basic_memory_agent, plus the structured two-tier memory system.
+            from .agents.structured_memory_agent import StructuredMemoryAgent
+
+            settings: dict = agent_settings.get("structured_memory_agent", {})
+            llm_provider: str = settings.get("llm_provider")
+
+            if not llm_provider:
+                raise ValueError("LLM provider not specified for structured memory agent")
+
+            llm_config: dict = llm_configs.get(llm_provider)
+            if not llm_config:
+                raise ValueError(
+                    f"Configuration not found for LLM provider: {llm_provider}"
+                )
+            llm_config = dict(llm_config)  # do not mutate the shared config pool
+            interrupt_method: Literal["system", "user"] = llm_config.pop(
+                "interrupt_method", "user"
+            )
+
+            llm = StatelessLLMFactory.create_llm(
+                llm_provider=llm_provider, system_prompt=system_prompt, **llm_config
+            )
+
+            tool_prompts = kwargs.get("system_config", {}).get("tool_prompts", {})
+
+            # Optional: a separate (usually much smaller and non-reasoning)
+            # model to run memory extraction/consolidation. Those are structured
+            # JSON tasks that do not need a big model, and a reasoning model can
+            # take ~100s to consolidate. Falls back to the main LLM when unset.
+            memory_llm = None
+            memory_cfg = settings.get("memory") or {}
+            memory_provider = (memory_cfg.get("memory_llm_provider") or "").strip()
+            if memory_provider and memory_provider != llm_provider:
+                mem_llm_config = llm_configs.get(memory_provider)
+                if not mem_llm_config:
+                    logger.warning(
+                        f"memory_llm_provider '{memory_provider}' not found in "
+                        "llm_configs; falling back to the main LLM for memory."
+                    )
+                else:
+                    mem_llm_config = dict(mem_llm_config)
+                    mem_llm_config.pop("interrupt_method", None)
+                    try:
+                        memory_llm = StatelessLLMFactory.create_llm(
+                            llm_provider=memory_provider,
+                            system_prompt="",
+                            **mem_llm_config,
+                        )
+                        logger.info(
+                            f"Memory system will use a dedicated LLM: {memory_provider}"
+                        )
+                    except Exception as exc:
+                        logger.error(
+                            f"Failed to create memory LLM '{memory_provider}': {exc}. "
+                            "Falling back to the main LLM."
+                        )
+
+            return StructuredMemoryAgent(
+                llm=llm,
+                system=system_prompt,
+                live2d_model=live2d_model,
+                tts_preprocessor_config=tts_preprocessor_config,
+                faster_first_response=settings.get("faster_first_response", True),
+                segment_method=settings.get("segment_method", "regex"),
+                use_mcpp=settings.get("use_mcpp", False),
+                interrupt_method=interrupt_method,
+                tool_prompts=tool_prompts,
+                tool_manager=kwargs.get("tool_manager"),
+                tool_executor=kwargs.get("tool_executor"),
+                mcp_prompt_string=kwargs.get("mcp_prompt_string", ""),
+                memory_config=settings.get("memory"),
+                memory_llm=memory_llm,
+            )
+
         elif conversation_agent_choice == "mem0_agent":
             from .agents.mem0_llm import LLM as Mem0LLM
 

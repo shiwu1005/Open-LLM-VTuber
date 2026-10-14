@@ -173,6 +173,18 @@ class BasicMemoryAgent(AgentInterface):
 
         self._memory.append(message_data)
 
+        # Optional post-message hooks (used by StructuredMemoryAgent so the
+        # memory system can observe turns without touching this class's logic).
+        # `_add_message` is the one place every turn is guaranteed to pass
+        # through, which makes it the reliable place to observe a finished turn.
+        # Hooks run outside this method's critical path and never raise.
+        hook = getattr(self, f"_on_{role}_message", None)
+        if hook is not None:
+            try:
+                hook(text_content)
+            except Exception as exc:
+                logger.error(f"{role}-message hook failed: {exc}")
+
     def set_memory_from_history(self, conf_uid: str, history_uid: str) -> None:
         """Load memory from chat history."""
         messages = get_history(conf_uid, history_uid)

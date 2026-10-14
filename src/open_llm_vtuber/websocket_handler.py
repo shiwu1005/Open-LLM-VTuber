@@ -279,6 +279,18 @@ class WebSocketHandler:
 
     async def handle_disconnect(self, client_uid: str) -> None:
         """Handle client disconnection"""
+        # Let the agent finish any in-flight background work (e.g. the memory
+        # system's per-turn extraction) before the session goes away, otherwise
+        # a pending write is destroyed mid-flight and that turn is lost.
+        ctx = self.client_contexts.get(client_uid)
+        agent = getattr(ctx, "agent_engine", None) if ctx else None
+        flush = getattr(agent, "flush_pending", None)
+        if callable(flush):
+            try:
+                await flush()
+            except Exception as exc:
+                logger.warning(f"Agent flush on disconnect failed: {exc}")
+
         group = self.chat_group_manager.get_client_group(client_uid)
         if group:
             await handle_group_interrupt(

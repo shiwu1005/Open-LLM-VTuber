@@ -1,5 +1,51 @@
 ![](./assets/banner.jpg)
 
+> [!IMPORTANT]
+> ## 这是 Open-LLM-VTuber 的个人定制版（Fork）
+>
+> 本项目 **fork 自 [Open-LLM-VTuber](https://github.com/Open-LLM-VTuber/Open-LLM-VTuber)**，
+> 原作者 **Yi-Ting Chiu**，MIT 许可（见 [LICENSE](./LICENSE)）。
+> **核心程序、Live2D 渲染、ASR/TTS 引擎、前端等均为原作者成果**，本仓库只是在其之上做了定制。
+> 下面的原始 README 保持原样，以便查阅完整文档。
+>
+> ### 本 Fork 做了什么
+>
+> | 改动 | 位置 |
+> |---|---|
+> | **结构化两层记忆系统**（长期/短期表格 + 满 7 条自动固化） | `src/open_llm_vtuber/memory/` |
+> | **按日期归档 + 索引**，提到"昨天/上周三/10月14日/第3天"自动调取当天记忆 | `src/open_llm_vtuber/memory/archive.py` |
+> | **记忆专用小模型**支持（把抽取/固化交给小模型，实测固化 97 秒 → 3-8 秒） | `structured_memory_agent.py` |
+> | **修复：推理模型下角色完全不出声**（思考 token 吃光预算导致正文为空） | `stateless_llm/openai_compatible_llm.py` + `config_manager/stateless_llm.py`（新增 `max_tokens` 配置项） |
+> | **通用 HTTP 接口桥接 MCP**（改 JSON 即可接入任意 HTTP API，无需写代码） | `extras/mcp_http_bridge.py` |
+> | 离线中文 TTS 方案（`edge_tts` 在部分地区被 403 封锁） | `config_templates/` + `docs/配置手册.md` |
+> | 一键安装 / 启动 / 发布前安全检查脚本 | `scripts/` |
+> | 中文文档 | `docs/` |
+>
+> ### ⚠️ 本仓库不包含的内容（请自行获取）
+>
+> - **Live2D 模型**：样例模型版权属 Live2D Inc.，其 Free Material License Agreement
+>   第 4.1.1 条 **禁止再分发**。请从[官方样例页](https://www.live2d.com/en/learn/sample/)
+>   或 [CubismWebSamples](https://github.com/Live2D/CubismWebSamples) 自行下载。
+> - **ASR / TTS 模型**：体积大，由 `scripts/setup.ps1` 自动从官方发布页下载。
+> - **`conf.yaml` / `mcp_servers.json`**：含个人路径与密钥，仓库只提供 `*.example.*` 模板。
+>
+> ### 快速开始
+>
+> ```powershell
+> git clone <本仓库地址>
+> cd <仓库目录>
+> powershell -ExecutionPolicy Bypass -File .\scripts\setup.ps1
+> .\scripts\start.bat
+> ```
+>
+> 国内网络可加镜像：`-Mirror https://mirrors.aliyun.com/pypi/simple`
+>
+> 详细说明见 [`docs/`](./docs)：配置手册、网络 API 方案、服务守护、打包发布、实测验收记录。
+
+---
+
+
+
 <h1 align="center">Open-LLM-VTuber</h1>
 <h3 align="center">
 

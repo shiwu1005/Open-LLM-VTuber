@@ -31,6 +31,9 @@ class LLMFactory:
             or llm_provider == "groq_llm"
             or llm_provider == "mistral_llm"
             or llm_provider == "lmstudio_llm"
+            # Dedicated model for the structured memory system's internal
+            # extraction/consolidation calls. Same OpenAI-compatible client.
+            or llm_provider == "memory_llm"
         ):
             return OpenAICompatibleLLM(
                 model=kwargs.get("model"),
@@ -39,6 +42,7 @@ class LLMFactory:
                 organization_id=kwargs.get("organization_id"),
                 project_id=kwargs.get("project_id"),
                 temperature=kwargs.get("temperature"),
+                max_tokens=kwargs.get("max_tokens"),
             )
         if llm_provider == "stateless_llm_with_template":
             return StatelessLLMWithTemplate(
