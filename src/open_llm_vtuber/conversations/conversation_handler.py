@@ -135,10 +135,16 @@ async def handle_individual_interrupt(
                 name=context.character_config.character_name,
                 avatar=context.character_config.avatar,
             )
+            # NOTE: must be "user", not "system". A system message here lands in
+            # the MIDDLE of the persisted history, and chat templates that
+            # enforce "system message must be at the beginning" (e.g. the
+            # Qwen3.6 MoE gguf) then reject the whole request with a 500.
+            # The interactive agent already uses "user" (interrupt_method
+            # defaults to "user"); this keeps persisted history consistent.
             store_message(
                 conf_uid=context.character_config.conf_uid,
                 history_uid=context.history_uid,
-                role="system",
+                role="user",
                 content="[Interrupted by user]",
             )
 
@@ -195,10 +201,12 @@ async def handle_group_interrupt(
                         name=context.character_config.character_name,
                         avatar=context.character_config.avatar,
                     )
+                    # "user", not "system" - see the note in
+                    # handle_single_conversation_interrupt above.
                     store_message(
                         conf_uid=member_ctx.character_config.conf_uid,
                         history_uid=member_ctx.history_uid,
-                        role="system",
+                        role="user",
                         content="[Interrupted by user]",
                     )
                 except Exception as e:
